@@ -1,4 +1,7 @@
 # Under Heavy Construction - Coming Soon
-Install Pytorch seperately
-https://pytorch.org/get-started/locally/
+Install [Pytorch](https://pytorch.org/get-started/locally/) seperately:
+
+
+```
 Then pip install -r requirements.txt
+```
