@@ -1,9 +1,8 @@
-from gymnasium.core import ObservationWrapper
-import numpy as np
 import collections
 import cv2
-import gymnasium
+import numpy as np
 import matplotlib.pyplot as plt
+import gymnasium
 
 
 def plot_learning_curve(x, scores, epsilons, filename, lines=None):
@@ -37,73 +36,79 @@ def plot_learning_curve(x, scores, epsilons, filename, lines=None):
 
 
 class RepeatActionAndMaxFrame(gymnasium.Wrapper):
-    def __init__(self, env, repeat=4, clip_reward=False, no_ops=0, fire_first=False):
-        super(RepeatActionAndMaxFrame, self).__init__(env)
+    def __init__(
+        self,
+        env: gymnasium.Env,
+        repeat=4,
+        clip_reward=False,
+        no_ops=0,
+        fire_first=False,
+    ):
+        gymnasium.Wrapper.__init__(self, env)
         self.repeat = repeat
         self.shape = env.observation_space.low.shape
-        self.frame_buffer = np.zeros((2,) + self.shape)
+        self.frame_buffer = np.zeros((2, *self.shape))
         self.clip_reward = clip_reward
         self.no_ops = no_ops
         self.fire_first = fire_first
 
     def step(self, action):
-        total_reward = 0.0
-        terminated = False
-        truncated = False
-        info = {}
+        t_reward = 0.0
+        terminal, truncated = False, False
         for i in range(self.repeat):
-            obs, reward, terminated, truncated, info = self.env.step(action)
+            obs, reward, terminal, truncated, info = self.env.step(action)
             if self.clip_reward:
                 reward = np.clip(np.array([reward]), -1, 1)[0]
-            total_reward += reward
+            t_reward += reward
             idx = i % 2
             self.frame_buffer[idx] = obs
-            if terminated or truncated:
+            if terminal or truncated:
                 break
 
         max_frame = np.maximum(self.frame_buffer[0], self.frame_buffer[1])
-        return max_frame, total_reward, terminated, truncated, info
+        return max_frame, t_reward, terminal, truncated, info
 
-    def reset(self, seed=None, options=None):
-        super().reset(seed=seed)
-        obs = self.env.reset()
+    def reset(self, **kwargs):
+        super().reset(**kwargs)
+        obs, info = self.env.reset()
         no_ops = np.random.randint(self.no_ops) + 1 if self.no_ops > 0 else 0
-        for i in range(no_ops):
-            _, _, terminated, truncated, _ = self.env.step(0)
-            if terminated or truncated:
-                self.env.reset()
+        for _ in range(no_ops):
+            _, _, terminal, truncated, _ = self.env.step(0)
+            if terminal or truncated:
+                _, _ = self.env.reset()
         if self.fire_first:
             assert self.env.unwrapped.get_action_meanings()[1] == "FIRE"
             obs, _, _, _, _ = self.env.step(1)
 
-        self.frame_buffer = np.zeros((2,) + self.shape)
-        self.frame_buffer[0] = obs[0]
-        return obs
+        self.frame_buffer = np.zeros((2, *self.shape))
+        self.frame_buffer[0] = obs
+
+        return obs, info
 
 
 class PreprocessFrame(gymnasium.ObservationWrapper):
-    def __init__(self, shape, env):
-        super(PreprocessFrame, self).__init__(env)
+    def __init__(self, shape, env: gymnasium.Env):
+        # super(PreprocessFrame, self).__init__(env)
+        gymnasium.ObservationWrapper.__init__(self, env)
         self.shape = (shape[2], shape[0], shape[1])
         self.observation_space = gymnasium.spaces.Box(
             low=0.0, high=1.0, shape=self.shape, dtype=np.float32
         )
 
-    def observation(self, obs):
-        new_frame = cv2.cvtColor(np.float32(obs), cv2.COLOR_RGB2GRAY)
+    def observation(self, observation):
+        new_frame = cv2.cvtColor(observation.astype(np.uint8), cv2.COLOR_RGB2GRAY)
         resized_screen = cv2.resize(
             new_frame, self.shape[1:], interpolation=cv2.INTER_AREA
         )
         new_obs = np.array(resized_screen, dtype=np.uint8).reshape(self.shape)
         new_obs = new_obs / 255.0
-        new_obs.astype(np.float32)
 
         return new_obs
 
 
 class StackFrames(gymnasium.ObservationWrapper):
-    def __init__(self, env, repeat):
-        super(StackFrames, self).__init__(env)
+    def __init__(self, env: gymnasium.Env, repeat):
+        gymnasium.ObservationWrapper.__init__(self, env)
         self.observation_space = gymnasium.spaces.Box(
             env.observation_space.low.repeat(repeat, axis=0),
             env.observation_space.high.repeat(repeat, axis=0),
@@ -111,13 +116,13 @@ class StackFrames(gymnasium.ObservationWrapper):
         )
         self.stack = collections.deque(maxlen=repeat)
 
-    def reset(self):
+    def reset(self, **kwargs):
         self.stack.clear()
-        observation = self.env.reset()
-        for i in range(self.stack.maxlen):
-            self.stack.append(observation[0])
+        observation, info = self.env.reset(**kwargs)
+        for _ in range(self.stack.maxlen):
+            self.stack.append(observation)
 
-        return np.array(self.stack).reshape(self.observation_space.low.shape)
+        return np.array(self.stack).reshape(self.observation_space.low.shape), info
 
     def observation(self, observation):
         self.stack.append(observation)
@@ -125,9 +130,6 @@ class StackFrames(gymnasium.ObservationWrapper):
         return np.array(self.stack).reshape(self.observation_space.low.shape)
 
 
-# Basically, since we our stacking all these wrappers when using individual calls like observation, reset,
-# the function will be called in succession. For example, the oberservation from each fucntion in each class
-# will feed into the next in the order stated below.
 def make_env(
     env_name,
     shape=(84, 84, 1),
@@ -140,4 +142,5 @@ def make_env(
     env = RepeatActionAndMaxFrame(env, repeat, clip_rewards, no_ops, fire_first)
     env = PreprocessFrame(shape, env)
     env = StackFrames(env, repeat)
+
     return env

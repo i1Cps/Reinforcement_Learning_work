@@ -7,6 +7,7 @@ import numpy as np
 class ReplayBuffer:
     def __init__(self, max_size, input_shape):
         # Size of replay buffer
+        print(input_shape)
         self.memory_size = max_size
         # Pointer to keep track of where we need to add memory in the buffer
         self.mem_cntr = 0
@@ -22,13 +23,13 @@ class ReplayBuffer:
         self.terminal_memory = np.zeros(self.memory_size, dtype=np.bool_)
         self.truncated_memory = np.zeros(self.memory_size, dtype=np.bool_)
 
-    def store_transition(self, state, action, reward, new_state, terminated, truncated):
+    def store_transition(self, state, action, reward, new_state, terminated):
         index = self.mem_cntr % self.memory_size
         self.state_memory[index] = state
         self.action_memory[index] = action
         self.reward_memory[index] = reward
         self.new_state_memory[index] = new_state
-        self.terminal_memory[index] = terminated or truncated
+        self.terminal_memory[index] = terminated
         self.mem_cntr += 1
 
     def sample_buffer(self, batch_size):

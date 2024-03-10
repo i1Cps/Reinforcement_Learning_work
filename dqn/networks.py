@@ -22,6 +22,7 @@ class DeepQNetwork(nn.Module):
         self.fc2 = nn.Linear(512, n_actions)
 
         self.optimizer = optim.RMSprop(self.parameters(), lr=learning_rate)
+        # self.optimizer = optim.Adam(self.parameters(), lr=learning_rate)
         self.loss = nn.MSELoss()
         self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
         self.to(self.device)
@@ -34,6 +35,7 @@ class DeepQNetwork(nn.Module):
         return int(np.prod(dims.size()))
 
     def forward(self, state):
+        # print("state poasssed to foward (should be in abtches)", state)
         conv1 = F.relu(self.conv1(state))
         conv2 = F.relu(self.conv2(conv1))
         conv3 = F.relu(self.conv3(conv2))
