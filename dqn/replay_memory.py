@@ -21,7 +21,6 @@ class ReplayBuffer:
         self.action_memory = np.zeros(self.memory_size, dtype=np.int64)
         self.reward_memory = np.zeros(self.memory_size, dtype=np.float32)
         self.terminal_memory = np.zeros(self.memory_size, dtype=np.bool_)
-        self.truncated_memory = np.zeros(self.memory_size, dtype=np.bool_)
 
     def store_transition(self, state, action, reward, new_state, terminated):
         index = self.mem_cntr % self.memory_size
@@ -42,6 +41,5 @@ class ReplayBuffer:
         rewards = self.reward_memory[batch]
         terminals = self.terminal_memory[batch]
         # I've abstained from sampling truncated_memory in an attempt to debug
-        truncated = self.truncated_memory[batch_size]
 
         return states, actions, rewards, new_states, terminals

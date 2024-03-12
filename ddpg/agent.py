@@ -51,7 +51,9 @@ class Agent:
         # Required for batch normalization and drop out stuff
         self.actor.eval()
         # state = T.from_numpy(observation)
-        state = T.tensor([observation], dtype=T.float).to(self.actor.device)
+        state = T.tensor(observation[np.newaxis, :], dtype=T.float).to(
+            self.actor.device
+        )
 
         mu = self.actor.forward(state).to(self.actor.device)
         mu_prime = mu + T.tensor(self.noise(), dtype=T.float).to(self.actor.device)
@@ -108,6 +110,7 @@ class Agent:
 
         self.critic.optimizer.zero_grad()
         # critic_loss = F.mse_loss(target, critic_value_cur)
+        # Order is irrelevant for this loss function
         critic_loss = F.mse_loss(critic_value_cur, target)
         critic_loss.backward()
         self.critic.optimizer.step()

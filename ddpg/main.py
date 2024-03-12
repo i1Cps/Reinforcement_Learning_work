@@ -32,7 +32,6 @@ if __name__ == "__main__":
     score_history = []
     for i in range(n_games):
         observation, info = env.reset()
-        done = False
         terminal = False
         truncated = False
         score = 0

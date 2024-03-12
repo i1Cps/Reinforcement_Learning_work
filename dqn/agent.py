@@ -172,7 +172,9 @@ class DQN:
         q_next = self.q_network_next.forward(states_).max(dim=1)[0]
 
         q_next[dones] = 0.0
-        q_target = rewards + self.gamma * q_next
+        with T.no_grad():
+            q_target = rewards + self.gamma * q_next
+        # q_target = rewards + self.gamma * q_next
 
         loss = self.q_network_eval.loss(q_target, q_pred).to(self.q_network_eval.device)
         loss.backward()
