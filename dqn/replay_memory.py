@@ -40,6 +40,5 @@ class ReplayBuffer:
         actions = self.action_memory[batch]
         rewards = self.reward_memory[batch]
         terminals = self.terminal_memory[batch]
-        # I've abstained from sampling truncated_memory in an attempt to debug
 
         return states, actions, rewards, new_states, terminals

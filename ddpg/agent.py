@@ -95,12 +95,12 @@ class Agent:
         # Below is based on OG DDPG continuous control paper
         # It uses typical Actor critic from policy gradient theorem but with DQN style stability using target network
 
+        # critic_value_cur is the value for the current state action pair that we sampled
+        critic_value_cur = self.critic.forward(states, actions)
+
         # critic_value_next is the value from the next state action pair
         target_actions = self.target_actor.forward(new_states)
         critic_value_next = self.target_critic.forward(new_states, target_actions)
-
-        # critic_value_cur is the value for the current state action pair that we sampled
-        critic_value_cur = self.critic.forward(states, actions)
 
         critic_value_next[terminals] = 0.0
         critic_value_next = critic_value_next.view(-1)
@@ -109,8 +109,7 @@ class Agent:
         target = target.view(self.batch_size, 1)
 
         self.critic.optimizer.zero_grad()
-        # critic_loss = F.mse_loss(target, critic_value_cur)
-        # Order is irrelevant for this loss function
+        # Order of parameters is irrelevant for this loss function
         critic_loss = F.mse_loss(critic_value_cur, target)
         critic_loss.backward()
         self.critic.optimizer.step()
