@@ -6,23 +6,38 @@ import numpy as np
 # something new, then after a while we set apple g to equal apple h. and begin to improve apple h again. Thats DQN
 class ReplayBuffer:
     def __init__(self, max_size, input_shape):
-        # Size of replay buffer
-        print(input_shape)
+        """
+        Initialize a replay buffer for storing transitions.
+
+        Parameters:
+        - max_size (int): Maximum capacity of the replay buffer.
+        - input_shape (tuple): Shape of the state observations.
+
+        Initializes arrays to store states, actions, rewards, new states, and terminal flags.
+        """
         self.memory_size = max_size
-        # Pointer to keep track of where we need to add memory in the buffer
         self.mem_cntr = 0
-        # Different numpy arrays of types of memory we will store, state, reward etc
-        self.state_memory = np.zeros(
-            (self.memory_size, *input_shape), dtype=np.float32
-        )  # use '*' to make input_shape ambigious
+        self.state_memory = np.zeros((self.memory_size, *input_shape), dtype=np.float32)
         self.new_state_memory = np.zeros(
             (self.memory_size, *input_shape), dtype=np.float32
-        )  # PyTorch can be funny when not using float32
+        )
         self.action_memory = np.zeros(self.memory_size, dtype=np.int64)
         self.reward_memory = np.zeros(self.memory_size, dtype=np.float32)
         self.terminal_memory = np.zeros(self.memory_size, dtype=np.bool_)
 
     def store_transition(self, state, action, reward, new_state, terminated):
+        """
+        Store a transition tuple in the replay buffer.
+
+        Parameters:
+        - state (array): Current state observation.
+        - action (array): Action taken in the current state.
+        - reward (float): Reward received after taking the action.
+        - next_state (array): Next state observation after taking the action.
+        - terminal (bool): Flag indicating whether the episode terminated after this transition.
+
+        Stores the transition tuple (state, action, reward, next_state, terminal) in the replay buffer.
+        """
         index = self.mem_cntr % self.memory_size
         self.state_memory[index] = state
         self.action_memory[index] = action
@@ -32,6 +47,21 @@ class ReplayBuffer:
         self.mem_cntr += 1
 
     def sample_buffer(self, batch_size):
+        """
+        Sample a batch of transitions from the replay buffer.
+
+        Parameters:
+        - batch_size (int): Number of transitions to sample.
+
+        Returns:
+        - states (array): Batch of current state observations.
+        - actions (array): Batch of actions taken.
+        - rewards (array): Batch of rewards received.
+        - new_states (array): Batch of new state observations.
+        - terminals (array): Batch of terminal flags.
+
+        Randomly samples a batch of transitions from the replay buffer and returns them as separate arrays.
+        """
         max_mem = min(self.mem_cntr, self.memory_size)
         batch = np.random.choice(max_mem, batch_size, replace=False)
 

@@ -21,6 +21,25 @@ class DQN:
         env_name="atari_probably",
         chkpt_dir="model_weights",
     ):
+        """
+        Initialize the DQN (Deep Q-Network) agent.
+
+        Parameters:
+        - n_actions (int): Number of actions in the action space.
+        - input_dims (int): Dimensionality of the input observations.
+        - mem_size (int): Maximum size of the replay memory buffer.
+        - batch_size (int): Size of batches sampled from replay memory for training
+        - gamma (float): Discount factor for future rewards
+        - learning_rate (float): Learning rate for the neural network optimizer
+        - epsilon (float): Initial value of epsilon for epsilon-greedy action selection
+        - eps_min (float): Minimum value of epsilon
+        - eps_dec (float): Epsilon decrement factor
+        - replace (int): Interval for updating the target Q-network
+        - algo (str): Algorithm identifier
+        - env_name (str): Name of the environment
+        - chkpt_dir (str): Directory to save model checkpoints
+        """
+        # Initialise parameters
         self.gamma = gamma
         self.learn_step_counter = 0
         self.replace_target_counter = replace
@@ -36,28 +55,57 @@ class DQN:
         self.memory = ReplayBuffer(mem_size, input_dims)
         self.fname = algo + "_" + env_name + "_lr" + str(learning_rate)
         self.algo = algo
-        # Set up deep network number 1, this one is for evaluating state and choosing actions
+
+        # Initialize the neural network used for evaluating states and choosing actions.
+        # This network is trained to approximate the Q-values of state-action pairs.
         self.q_network_eval = DeepQNetwork(
-            env_name + "_" + algo + "_q_eval",
-            self.input_dims,
-            self.n_actions,
-            self.learning_rate,
-            chkpt_dir,
+            env_name + "_" + algo + "_q_eval",  # Name of the evaluation network
+            self.input_dims,  # Input dimensions of the network
+            self.n_actions,  # Number of actions in the action space
+            self.learning_rate,  # Learning rate for the optimizer
+            chkpt_dir,  # Directory to save model checkpoints
         )
-        # Set up deep network number 2, this is our target network which we continuously update
+
+        # Initialize the target network, which is used to stabilize training.
+        # This network's parameters are updated less frequently to provide more stable target Q-values.
         self.q_network_next = DeepQNetwork(
-            env_name + "_" + algo + "_q_next",
-            self.input_dims,
-            self.n_actions,
-            self.learning_rate,
-            chkpt_dir,
+            env_name + "_" + algo + "_q_next",  # Name of the target network
+            self.input_dims,  # Input dimensions of the network
+            self.n_actions,  # Number of actions in the action space
+            self.learning_rate,  # Learning rate for the optimizer
+            chkpt_dir,  # Directory to save model checkpoints
         )
+
+        # Set the device for tensor computations based on the device used by the evaluation network.
         self.device = self.q_network_eval.device
 
     def store_transition(self, state, action, reward, new_state, terminal):
+        """
+        Store a transition tuple in memory buffer.
+
+        Parameters:
+        - state (array): Current state.
+        - action (array): Action taken.
+        - reward (float): Reward received.
+        - next_state (array): Next state after taking action.
+        - terminal (bool): Flag indicating terminal state.
+        """
+
+        # Store experience in memory buffer
         self.memory.store_transition(state, action, reward, new_state, terminal)
 
     def sample_memory(self):
+        """
+        Sample a batch of transitions from the replay memory buffer.
+
+        Returns:
+        - tensor_states (tensor): Batch of states.
+        - tensor_actions (tensor): Batch of actions.
+        - tensor_rewards (tensor): Batch of rewards.
+        - tensor_new_states (tensor): Batch of new states.
+        - tensor_terminals (tensor): Batch of terminal flags.
+        """
+        # Sample transitions from the replay memory buffer
         (
             states,
             actions,
@@ -66,7 +114,7 @@ class DQN:
             terminals,
         ) = self.memory.sample_buffer(self.batch_size)
 
-        # Convert to tensors, for evalutation by network
+        # Convert sampled data to tensors for evaluation by the neural network
         tensor_states = T.tensor(states).to(self.q_network_eval.device)
         tensor_actions = T.tensor(actions).to(self.q_network_eval.device)
         tensor_rewards = T.tensor(rewards).to(self.q_network_eval.device)
@@ -81,27 +129,39 @@ class DQN:
             tensor_terminals,
         )
 
-    # Choose action using epsilon greedy policy:
     def choose_action(self, observation):
+        """
+        Choose an action using an epsilon-greedy policy based on the observation.
+
+        Parameters:
+        - observation (array): Current state observation.
+
+        Returns:
+        - action (int): Action selected by the policy.
+        """
         if np.random.random() > self.epsilon:
+            # Exploit: Select the action with the highest Q-value according to the evaluation network
             state = T.tensor(
-                # Converts shape: (batch_size) -> shape: (1,batch_size)
-                # Because network expects observations in that shape
-                observation[np.newaxis, :],
+                observation[
+                    np.newaxis, :
+                ],  # Convert shape: (batch_size) -> shape: (1,batch_size)
                 dtype=T.float,
                 device=self.q_network_eval.device,
             )
             actions = self.q_network_eval.forward(state)
-            # Pick the best action with the biggest probability
-            action = T.argmax(actions).item()  # dereference returned tensor with .item
+            action = T.argmax(actions).item()  # Select action with the highest Q-value
         else:
+            # Explore: Select a random action
             action = np.random.choice(self.action_space)
         return action
 
-    # This function just updates the target network to be the same as the eval network
-    # Basic principle of DQN
     def replace_target_network(self):
+        """
+        Update the parameters of the target Q-network to match those of the evaluation Q-network.
+        This is performed periodically to stabilize training.
+        """
         if self.learn_step_counter % self.replace_target_counter == 0:
+            # Load the parameters of the evaluation network into the target network
             self.q_network_next.load_state_dict(self.q_network_eval.state_dict())
 
     # Agents policy gradually become less stochastic
@@ -119,18 +179,25 @@ class DQN:
         self.q_network_next.load_checkpoint()
 
     def learn(self):
-        # Many different methods to satisfy a sufficient buffer before sampling
+        """
+        Update the Q-network based on experiences sampled from the replay memory buffer.
+
+        This function implements the learning process outlined in the original Deep Q-Network (DQN) paper.
+        It samples experiences from the replay buffer, computes target Q-values using the target Q-network,
+        and updates the Q-network to minimize the Mean Squared Error (MSE) between the predicted Q-values
+        and the target Q-values. The target Q-network is periodically updated to stabilize training.
+        """
+        # Check if enough samples are available in the replay memory buffer
         if self.memory.mem_cntr < self.batch_size:
             return
 
-        # Always zero grad before learning
+        # Reset gradients before backpropagation
         self.q_network_eval.optimizer.zero_grad()
 
-        # We call this every time step but in the function it will only
-        # replace every X time steps
+        # Update the target Q-network periodically
         self.replace_target_network()
 
-        # sample a batch
+        # Sample a batch of experiences from the replay memory buffer
         (
             states,
             actions,
@@ -141,22 +208,29 @@ class DQN:
 
         # Handle Loss---->>>>> Look up DQN formula please
 
-        # Get Q values for the actions that were chosen in the sampled states
-        # Look up torch.gather() cant explain in comments. Its a tensor indexing function
-        actions = T.unsqueeze(actions, 1)  # Converts to shape [32,action]
+        # Compute Q-values for the sampled states and actions
+        actions = T.unsqueeze(actions, 1)  # Reshape actions for indexing
         Q = self.q_network_eval.forward(states).gather(1, actions.long())
 
-        # torch.max()[0] simply returns the action with the highest value from sampled'next_states'
+        # Compute Q-values for the next states using the target Q-network
         Q_next = self.q_network_next.forward(new_states).max(dim=1)[0]
         Q_next[terminals] = 0.0  # Set terminal states to value 0.0
 
         # In the DQN paper, loss = loss_function(reward + gamma(max_action(sate_action_target_values)), state_action_predicted_values)
+        # Compute the target Q-values for the Bellman equation
         with T.no_grad():
             Q_target = rewards + self.gamma * Q_next
 
-        Q_target = T.unsqueeze(Q_target, 1)
+        # Calculate the MSE loss between predicted and target Q-values
+        Q_target = T.unsqueeze(Q_target, 1)  # Reshape target Q-values
         loss = self.q_network_eval.loss(Q_target, Q).to(self.q_network_eval.device)
+
+        # Backpropagate the loss and update the Q-network parameters
         loss.backward()  # Gradient descent, on weights involved in the learning
         self.q_network_eval.optimizer.step()
+
+        # Increment the learning step counter
         self.learn_step_counter += 1
+
+        # Decrement epsilon to decrease exploration over time
         self.decrement_epsilon()
