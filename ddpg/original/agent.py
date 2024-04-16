@@ -83,36 +83,34 @@ class Agent:
         if self.memory.mem_counter < self.batch_size:
             return
 
-        states, actions, rewards, new_states, terminals = self.memory.sample_memory(
+        states, actions, rewards, next_states, terminals = self.memory.sample_memory(
             self.batch_size
         )
         states = T.tensor(states, dtype=T.float).to(self.actor.device)
         actions = T.tensor(actions, dtype=T.float).to(self.actor.device)
         rewards = T.tensor(rewards, dtype=T.float).to(self.actor.device)
-        new_states = T.tensor(new_states, dtype=T.float).to(self.actor.device)
+        next_states = T.tensor(next_states, dtype=T.float).to(self.actor.device)
         terminals = T.tensor(terminals).to(self.actor.device)
 
-        # Below is based on OG DDPG continuous control paper
-        # It uses typical Actor critic from policy gradient theorem but with DQN style stability using target network
+        # ---------------- Update Critic -------------- #
 
-        # critic_value_cur is the value for the current state action pair that we sampled
-        critic_value_cur = self.critic.forward(states, actions)
+        Q_critic = self.critic.forward(states, actions)
 
-        # critic_value_next is the value from the next state action pair
-        target_actions = self.target_actor.forward(new_states)
-        critic_value_next = self.target_critic.forward(new_states, target_actions)
+        next_actions = self.target_actor.forward(next_states)
+        Q_critic_next = self.target_critic.forward(next_states, next_actions)
+        Q_critic_next[terminals] = 0.0
+        Q_critic_next = Q_critic_next.view(-1)
 
-        critic_value_next[terminals] = 0.0
-        critic_value_next = critic_value_next.view(-1)
+        Q_target = rewards + self.gamma * Q_critic_next
+        Q_target = Q_target.view(self.batch_size, 1)
 
-        target = rewards + self.gamma * critic_value_next
-        target = target.view(self.batch_size, 1)
-
+        # Loss Calculation
+        critic_loss = F.mse_loss(Q_critic, Q_target)
         self.critic.optimizer.zero_grad()
-        # Order of parameters is irrelevant for this loss function
-        critic_loss = F.mse_loss(critic_value_cur, target)
         critic_loss.backward()
         self.critic.optimizer.step()
+
+        # ---------------- Update Actor -------------------#
 
         self.actor.optimizer.zero_grad()
         actor_loss = -self.critic.forward(states, self.actor.forward(states))
@@ -120,10 +118,10 @@ class Agent:
         actor_loss.backward()
         self.actor.optimizer.step()
 
+        # ------------------ Update target networks ----------- #
+
         self.update_network_parameters()
 
-    # Instead of a hard copy, we use, tau, a weight/ratio of how much we want to copy over,
-    # 0.5 50%, 0.9 90% of original critic etc
     def update_network_parameters(self, tau=None):
         if tau is None:
             tau = self.tau
