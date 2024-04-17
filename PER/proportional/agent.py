@@ -258,6 +258,8 @@ class DQN:
         td_error = np.abs((Q_target.detach().cpu().numpy() - Q.detach().cpu().numpy()))
 
         td_error = np.clip(td_error, 0.0, 1.0)
+        print("hey")
+        print(td_error)
 
         self.memory.update_priorities(samples_idx, td_error)
 

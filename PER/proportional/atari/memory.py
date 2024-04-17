@@ -19,9 +19,14 @@ class Node:
 
 
 class SumTree:
-    def __init__(self, max_size: int = 1_00_000, batch_size: int = 32,
-                 alpha: float = 0.5, beta: float = 0.5,
-                 input_shape=(4, 84, 84)):
+    def __init__(
+        self,
+        max_size: int = 1_00_000,
+        batch_size: int = 32,
+        alpha: float = 0.5,
+        beta: float = 0.5,
+        input_shape=(4, 84, 84),
+    ):
         self.counter = 0
         self.max_size = max_size
         self.batch_size = batch_size
@@ -31,13 +36,11 @@ class SumTree:
         self.beta_start = beta
 
         self.sum_tree = []
-        self.states = np.zeros(shape=(max_size, *input_shape),
-                               dtype=np.float16)
+        self.states = np.zeros(shape=(max_size, *input_shape), dtype=np.float16)
         self.actions = np.zeros(shape=(max_size,), dtype=np.int64)
         self.rewards = np.zeros(shape=(max_size,), dtype=np.float16)
-        self.states_ = np.zeros(shape=(max_size, *input_shape),
-                                dtype=np.float16)
-        self.dones = np.zeros(shape=(max_size,), dtype=np.bool)
+        self.states_ = np.zeros(shape=(max_size, *input_shape), dtype=np.float16)
+        self.dones = np.zeros(shape=(max_size,), dtype=np.bool_)
 
     def _insert(self, transition: List):
         state, action, reward, state_, done = transition
@@ -57,8 +60,8 @@ class SumTree:
     def _calculate_parents(self, index: int):
         parents = []
         while index > 0:
-            parents.append(int((index-1)//2))
-            index = int((index-1)//2)
+            parents.append(int((index - 1) // 2))
+            index = int((index - 1) // 2)
         return parents
 
     def update_priorities(self, indices: List, priorities: List):
@@ -66,7 +69,7 @@ class SumTree:
 
     def _propagate_changes(self, indices: List, priorities: List):
         for idx, p in zip(indices, priorities):
-            delta = self.sum_tree[idx].update_priority((p+1e-3)**self.alpha)
+            delta = self.sum_tree[idx].update_priority((p + 1e-3) ** self.alpha)
             parents = self._calculate_parents(idx)
             for parent in parents:
                 self.sum_tree[parent].update_total(delta)
@@ -75,8 +78,7 @@ class SumTree:
         total_weight = self.sum_tree[0].total
 
         if total_weight == 0.01:
-            samples = np.random.choice(self.batch_size, self.batch_size,
-                                       replace=False)
+            samples = np.random.choice(self.batch_size, self.batch_size, replace=False)
             probs = [1 / self.batch_size for _ in range(self.batch_size)]
             return samples, probs
 
@@ -90,8 +92,7 @@ class SumTree:
             while True:
                 left = 2 * index + 1
                 right = 2 * index + 2
-                if left > len(self.sum_tree) - 1\
-                   or right > len(self.sum_tree) - 1:
+                if left > len(self.sum_tree) - 1 or right > len(self.sum_tree) - 1:
                     break
                 left_sum = self.sum_tree[left].total
                 if target < left_sum:
@@ -112,14 +113,19 @@ class SumTree:
     def sample(self):
         samples, probs = self._sample()
         weights = self._calculate_weights(probs)
-        mems = [self.states[samples], self.actions[samples],
-                self.rewards[samples], self.states_[samples],
-                self.dones[samples]]
+        mems = [
+            self.states[samples],
+            self.actions[samples],
+            self.rewards[samples],
+            self.states_[samples],
+            self.dones[samples],
+        ]
         return mems, samples, weights
 
     def _calculate_weights(self, probs: List):
-        weights = np.array([(1 / self.counter * 1 / prob)**self.beta
-                            for prob in probs])
+        weights = np.array(
+            [(1 / self.counter * 1 / prob) ** self.beta for prob in probs]
+        )
         weights *= 1 / max(weights)
         return weights
 
