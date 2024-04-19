@@ -50,7 +50,6 @@ class Agent:
     def choose_action(self, observation):
         # Required for batch normalization and drop out stuff
         self.actor.eval()
-        # state = T.from_numpy(observation)
         state = T.tensor(observation[np.newaxis, :], dtype=T.float).to(
             self.actor.device
         )
@@ -59,7 +58,6 @@ class Agent:
         mu_prime = mu + T.tensor(self.noise(), dtype=T.float).to(self.actor.device)
         self.actor.train()
 
-        # AKA The chosen actions
         return mu_prime.cpu().detach().numpy()[0]
 
     def store_transition(self, state, action, reward, new_state, terminal):
@@ -94,15 +92,16 @@ class Agent:
 
         # ---------------- Update Critic -------------- #
 
+        with T.no_grad():
+            next_actions = self.target_actor.forward(next_states)
+            Q_critic_next = self.target_critic.forward(next_states, next_actions)
+            Q_critic_next[terminals] = 0.0
+            Q_critic_next = Q_critic_next.view(-1)
+
+            Q_target = rewards + self.gamma * Q_critic_next
+            Q_target = Q_target.view(self.batch_size, 1)
+
         Q_critic = self.critic.forward(states, actions)
-
-        next_actions = self.target_actor.forward(next_states)
-        Q_critic_next = self.target_critic.forward(next_states, next_actions)
-        Q_critic_next[terminals] = 0.0
-        Q_critic_next = Q_critic_next.view(-1)
-
-        Q_target = rewards + self.gamma * Q_critic_next
-        Q_target = Q_target.view(self.batch_size, 1)
 
         # Loss Calculation
         critic_loss = F.mse_loss(Q_critic, Q_target)
@@ -150,7 +149,3 @@ class Agent:
 
         self.target_critic.load_state_dict(critic_state_dict)
         self.target_actor.load_state_dict(actor_state_dict)
-
-        # unrecommened version for batch normalization instead of layer
-        # self.target_critic.load_state_dict(critic_state_dict, strict =False)
-        # self.target_actor.laod_state_dict(actor_state_dict, strick = False)
