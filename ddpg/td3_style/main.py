@@ -54,7 +54,8 @@ if __name__ == "__main__":
             total_steps += 1
             done = terminal or truncated
             agent.store_transition(observation, action, reward, new_observation, done)
-            agent.learn()
+            if total_steps >= RANDOM_STEPS:
+                agent.learn()
             score += reward
             observation = new_observation
         score_history.append(score)
