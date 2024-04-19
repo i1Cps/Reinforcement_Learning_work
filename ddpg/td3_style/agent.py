@@ -27,7 +27,7 @@ class Agent:
         self.tau = tau
         self.batch_size = batch_size
         self.n_actions = n_actions
-        self.max_actions = max_actions
+        self.max_action = max_actions
 
         self.memory = ReplayBuffer(max_size, input_dims, n_actions)
         self.noise = OUActionNoise(mu=np.zeros(n_actions))
@@ -60,8 +60,14 @@ class Agent:
                 self.actor.device
             )
             mu = self.actor.forward(state).to(self.actor.device).cpu().numpy()[0]
-            noise = np.random.normal(0, self.max_actions * 0.1, size=self.n_actions)
-            return (mu + noise).clip(-self.max_actions, self.max_actions)
+            noise = np.random.normal(0, self.max_action * 0.1, size=self.n_actions)
+            return (mu + noise).clip(-self.max_action, self.max_action)
+
+    def choose_random_action(self):
+        # Generate random actions with reduced standard deviation to typically stay within bounds
+        return np.random.normal(0, self.max_action * 0.1, size=self.n_actions).clip(
+            -self.max_action, self.max_action
+        )
 
     def store_transition(self, state, action, reward, next_state, terminal):
         self.memory.store_transition(state, action, reward, next_state, terminal)
