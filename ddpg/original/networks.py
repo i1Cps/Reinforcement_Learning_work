@@ -16,12 +16,10 @@ class CriticNetwork(nn.Module):
         # Three Fully Connected Layers
         self.fc1 = nn.Linear(*input_dims, fc1_dims)
         self.fc2 = nn.Linear(fc1_dims + n_actions, fc2_dims)
-        # self.fc3 = nn.Linear(fc2_dims, fc2_dims)
 
         # Batch Normalization vs Layer Normalization
         self.bn1 = nn.LayerNorm(fc1_dims)
         self.bn2 = nn.LayerNorm(fc2_dims)
-        # self.bn3 = nn.LayerNorm(fc2_dims)
 
         # State-Action Value ~ Q Value
         self.q = nn.Linear(fc2_dims, 1)
@@ -53,7 +51,6 @@ class CriticNetwork(nn.Module):
         state_value = F.relu(self.bn1(self.fc1(state)))
         state_action_value = T.cat([state_value, action], 1)
         state_action_value = F.relu(self.bn2(self.fc2(state_action_value)))
-        # state_action_value = F.relu(self.bn3(self.fc3(state_action_value)))
         state_action_value = self.q(state_action_value)
 
         return state_action_value
@@ -76,11 +73,9 @@ class ActorNetwork(nn.Module):
 
         self.fc1 = nn.Linear(*input_dims, fc1_dims)
         self.fc2 = nn.Linear(fc1_dims, fc2_dims)
-        # self.fc3 = nn.Linear(fc2_dims, fc2_dims)
 
         self.bn1 = nn.LayerNorm(fc1_dims)
         self.bn2 = nn.LayerNorm(fc2_dims)
-        # self.bn3 = nn.LayerNorm(fc2_dims)
 
         self.mu = nn.Linear(fc2_dims, n_actions)
 
@@ -92,10 +87,6 @@ class ActorNetwork(nn.Module):
         f2 = 1.0 / np.sqrt(self.fc2.weight.data.size()[0])
         self.fc2.weight.data.uniform_(-f2, f2)
         self.fc2.bias.data.uniform_(-f2, f2)
-
-        # f3 = 1.0 / np.sqrt(self.fc3.weight.data.size()[0])
-        # self.fc3.weight.data.uniform_(-f3, f3)
-        # self.fc3.bias.data.uniform_(-f3, f3)
 
         f4 = 0.003
         self.mu.weight.data.uniform_(-f4, f4)
@@ -111,7 +102,6 @@ class ActorNetwork(nn.Module):
     def forward(self, state):
         x = F.relu(self.bn1(self.fc1(state)))
         x = F.relu(self.bn2(self.fc2(x)))
-        # x = F.relu(self.bn3(self.fc3(x)))
         x = T.tanh(self.mu(x))
         return x
 
