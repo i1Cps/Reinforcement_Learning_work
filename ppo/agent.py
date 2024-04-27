@@ -2,6 +2,7 @@ import torch as T
 from torch.cuda import memory
 from memory import PPOMemory
 from networks import ContinuousActorNetwork, ContinuousCriticNetwork
+import numpy as np
 
 
 class Agent:
@@ -18,6 +19,8 @@ class Agent:
         n_epochs=10,
     ):
         self.gamma = gamma
+        self.alpha = alpha
+
         self.gae_lambda = gae_lambda
         self.policy_clip = policy_clip
         self.n_epochs = n_epochs
@@ -33,7 +36,9 @@ class Agent:
 
     def choose_action(self, observation):
         with T.no_grad():
-            state = T.tensor([observation], dtype=T.float, device=self.actor.device)
+            state = T.tensor(
+                observation[np.newaxis, :], dtype=T.float, device=self.actor.device
+            )
 
             dist = self.actor(state)
             action = dist.sample()

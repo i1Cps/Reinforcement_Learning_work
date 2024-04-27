@@ -2,6 +2,7 @@ import numpy as np
 import torch as T
 from agent import Agent
 import gymnasium as gym
+from utils import plot_learning_curve
 
 
 def action_adapter(a, max_a):
@@ -18,26 +19,37 @@ def clip_reward(x):
 
 
 if __name__ == "__main__":
-    env_id = "Pendulum-v1"
+    env_id = "BipedalWalker-v3"
     seed = 0
     T.manual_seed(seed)
     np.random.seed(seed)
     env = gym.make(env_id)
-    # env.seed(seed)
 
     N = 2048
     batch_size = 64
     n_epochs = 10
     alpha = 3e-4
+    max_steps = 1_000_000
     max_action = env.action_space.high[0]
+
     agent = Agent(
         input_dims=env.observation_space.shape,
         n_actions=env.action_space.shape[0],
         gamma=0.99,
         alpha=alpha,
     )
+
+    filename = (
+        "bipedal_walker_"
+        + str(agent.alpha)
+        + "N_epochs_"
+        + str(agent.n_epochs)
+        + "_"
+        + str(max_steps)
+        + "_games"
+    )
+    figure_file = "plots/" + filename + ".png"
     score_history = []
-    max_steps = 1_000_000
     total_steps = 0
     trajectory_len = 0
     episode = 1
@@ -77,3 +89,5 @@ if __name__ == "__main__":
             )
         )
         episode += 1
+    x = [i + 1 for i in range(episode)]
+    plot_learning_curve(x, score_history, figure_file)
