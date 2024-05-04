@@ -1,43 +1,45 @@
 from agent import Agent
+from typing import List, Any, Dict
+
+from memory import MAPPOMemory
 
 
 class MAPPO:
     def __init__(
         self,
-        actor_dims,
-        critic_dims,
-        n_agents,
-        n_actions,
-        env,
-        T,
-        n_procs,
-        alpha=1e-4,
-        fc1=64,
-        fc2=64,
-        gamma=0.95,
-        tau=0.01,
-        checkpoint_dir="models/",
-        scenario="co-op_navigation",
+        actor_dims: List[int],
+        critic_dims: int,
+        n_agents: int,
+        n_actions: List[int],
+        env: Any,
+        n_epochs: int,
+        alpha: float = 1e-4,
+        fc1: int = 64,
+        fc2: int = 64,
+        gamma: float = 0.95,
+        checkpoint_dir: str = "models/",
+        scenario: str = "unclassified",
     ):
         self.agents = []
         checkpoint_dir += scenario
         for agent_idx, agent in enumerate(env.agents):
             self.agents.append(
                 Agent(
-                    actor_dims=actor_dims[agent],
+                    actor_dims=actor_dims[agent_idx],
                     critic_dims=critic_dims,
-                    n_actions=n_actions[agent],
+                    n_actions=n_actions[agent_idx],
                     agent_idx=agent_idx,
                     alpha=alpha,
                     fc1=fc1,
                     fc2=fc2,
+                    n_epochs=n_epochs,
                     gamma=gamma,
                     checkpoint_dir=checkpoint_dir,
-                    scenrio=scenario,
+                    scenario=scenario,
                 )
             )
 
-    def choose_actions(self, raw_obs):
+    def choose_actions(self, raw_obs: Dict) -> tuple[Dict, Dict]:
         actions = {}
         probs = {}
         for agent_id, agent in zip(raw_obs, self.agents):
@@ -46,9 +48,9 @@ class MAPPO:
             probs[agent_id] = prob
         return actions, probs
 
-    def learn(self, memory):
+    def learn(self, memory: MAPPOMemory):
         for agent in self.agents:
-            agent.learn(memory, self.agents)
+            agent.learn(memory)
 
     def save_checkpoint(self):
         for agent in self.agents:

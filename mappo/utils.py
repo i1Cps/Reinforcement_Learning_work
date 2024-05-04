@@ -12,10 +12,7 @@ def plot_learning_curve(x, scores, figure_file):
 
 
 def obs_list_to_state_vector(observation):
-    state = []
-    for row in observation:
-        obs = np.array([])
-        for o in row:
-            obs = np.concatenate([obs, o])
-        state.append(obs)
-    return np.array(state)
+    state = np.array([])
+    for obs in observation:
+        state = np.concatenate([state, obs])
+    return state
