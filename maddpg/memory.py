@@ -1,9 +1,16 @@
 import numpy as np
+from typing import List, Tuple
 
 
 class MultiAgentReplayBuffer:
     def __init__(
-        self, max_size, critic_dims, actor_dims, n_actions, n_agents, batch_size
+        self,
+        max_size: int,
+        critic_dims: int,
+        actor_dims: List[int],
+        n_actions: List[int],
+        n_agents: int,
+        batch_size: int,
     ):
         self.mem_size = max_size
         self.mem_counter = 0
@@ -36,7 +43,14 @@ class MultiAgentReplayBuffer:
             )
 
     def store_transition(
-        self, raw_obs, state, action, reward, next_raw_obs, next_state, done
+        self,
+        raw_obs: List[np.ndarray],
+        state: np.ndarray,
+        action: List[np.ndarray],
+        reward: List,
+        next_raw_obs: List[np.ndarray],
+        next_state: np.ndarray,
+        done: List[bool],
     ):
         index = self.mem_counter % self.mem_size
         for agent_idx in range(self.n_agents):
@@ -50,7 +64,17 @@ class MultiAgentReplayBuffer:
         self.terminal_memory[index] = done
         self.mem_counter += 1
 
-    def sample_buffer(self):
+    def sample_buffer(
+        self,
+    ) -> Tuple[
+        List[np.ndarray],
+        np.ndarray,
+        List[np.ndarray],
+        np.ndarray,
+        List[np.ndarray],
+        np.ndarray,
+        np.ndarray,
+    ]:
         max_mem = min(self.mem_counter, self.mem_size)
 
         batch = np.random.choice(max_mem, self.batch_size, replace=False)
@@ -79,5 +103,5 @@ class MultiAgentReplayBuffer:
             terminal,
         )
 
-    def ready(self):
+    def ready(self) -> bool:
         return self.mem_counter >= self.batch_size

@@ -36,6 +36,7 @@ def run():
         gamma=0.95,
         alpha=alpha,
         scenario=scenario,
+        checkpoint_dir="data/models",
     )
 
     memory = MAPPOMemory(
@@ -106,8 +107,8 @@ def run():
 
         episode += 1
 
-    np.save("data/mappo_scores.npy", np.array(score_history))
-    np.save("data/mappo_steps.npy", np.array(steps_history))
+    np.save("data/raw_data/mappo_scores.npy", np.array(score_history))
+    np.save("data/raw_data/mappo_steps.npy", np.array(steps_history))
 
 
 if __name__ == "__main__":

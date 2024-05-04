@@ -1,25 +1,28 @@
 import numpy as np
+from typing import List
 import torch as T
 import torch.nn.functional as F
+from memory import MultiAgentReplayBuffer
 from networks import ActorNetwork, CriticNetwork
 
 
 class Agent:
     def __init__(
         self,
-        actor_dims,
-        critic_dims,
-        n_actions,
-        agent_idx,
-        min_action,
-        max_action,
-        alpha=1e-4,
-        beta=1e-3,
-        fc1=64,
-        fc2=64,
-        gamma=0.95,
-        tau=0.01,
-        checkpoint_dir="models",
+        actor_dims: int,
+        critic_dims: int,
+        n_actions: int,
+        agent_idx: int,
+        min_action: List,
+        max_action: List,
+        alpha: float = 1e-4,
+        beta: float = 1e-3,
+        fc1: int = 64,
+        fc2: int = 64,
+        gamma: float = 0.95,
+        tau: float = 0.01,
+        checkpoint_dir: str = "models",
+        scenario: str = "unclassified",
     ):
         self.gamma = gamma
         self.tau = tau
@@ -37,6 +40,7 @@ class Agent:
             fc2=fc2,
             name=self.agent_name + "_actor",
             checkpoint_dir=checkpoint_dir,
+            scenario=scenario,
         )
 
         self.target_actor = ActorNetwork(
@@ -47,6 +51,7 @@ class Agent:
             fc2=fc2,
             name=self.agent_name + "_target_actor",
             checkpoint_dir=checkpoint_dir,
+            scenario=scenario,
         )
 
         self.critic = CriticNetwork(
@@ -56,6 +61,7 @@ class Agent:
             fc2=fc2,
             name=self.agent_name + "_critic",
             checkpoint_dir=checkpoint_dir,
+            scenario=scenario,
         )
 
         self.target_critic = CriticNetwork(
@@ -65,17 +71,18 @@ class Agent:
             fc2=fc2,
             name=self.agent_name + "_target_critic",
             checkpoint_dir=checkpoint_dir,
+            scenario=scenario,
         )
 
         self.update_network_parameters(tau=1)
 
-    def choose_action(self, observation, evaluate=False):
+    def choose_action(self, observation: np.ndarray, eval: bool = False) -> np.ndarray:
         state = T.tensor(
             observation[np.newaxis, :], dtype=T.float, device=self.actor.device
         )
         actions = self.actor.forward(state)
         noise = T.randn(size=(self.n_actions,)).to(self.actor.device)
-        noise *= T.tensor(1 - int(evaluate))
+        noise *= T.tensor(1 - int(eval))
         action = T.clamp(
             actions + noise,
             T.tensor(self.min_action, device=self.actor.device),
@@ -83,16 +90,16 @@ class Agent:
         )
         return action.data.cpu().numpy()[0]
 
-    def _choose_action(self, observation, evaluate=False):
+    def _choose_action(self, observation, eval: bool = False):
         state = T.tensor(
             observation[np.newaxis, :], dtype=T.float, device=self.actor.device
         )
         actions = self.actor.forward(state).to(self.actor.device).cpu().numpy()[0]
         noise = np.random.normal(0, self.max_action * 0.1, size=self.n_actions)
-        noise *= 1 - int(evaluate)
+        noise *= 1 - int(eval)
         return (actions + noise).clip(-self.max_action, self.max_action)
 
-    def learn(self, memory, agent_list):
+    def learn(self, memory: MultiAgentReplayBuffer, agent_list):
         if not memory.ready():
             return
 

@@ -1,3 +1,4 @@
+from pathlib import Path
 import numpy as np
 from maddpg import MADDPG
 from memory import MultiAgentReplayBuffer
@@ -13,14 +14,27 @@ def obs_list_to_state_vector(observation):
 
 def run():
     parallel_env = simple_speaker_listener_v4.parallel_env(continuous_actions=True)
+
+    # Hyperparameters
+    MEMORY_SIZE = 1_000_000
+    BATCH_SIZE = 1024
+    ALPHA = 1e-4
+    BETA = 1e-3
+    GAMMA = 0.95
+    TAU = 0.01
+    EVAL_INTERVAL = 1000
+    MAX_STEPS = 1_000_000
+
+    scenario = "simple_speaker_listener"
     _, _ = parallel_env.reset()
     n_agents = parallel_env.max_num_agents
 
-    actor_dims = []
-    n_actions = []
-    for agent in parallel_env.agents:
-        actor_dims.append(parallel_env.observation_space(agent).shape[0])
-        n_actions.append(parallel_env.action_space(agent).shape[0])
+    actor_dims = [
+        parallel_env.observation_space(agent).shape[0] for agent in parallel_env.agents
+    ]
+    n_actions = [
+        parallel_env.action_space(agent).shape[0] for agent in parallel_env.agents
+    ]
     critic_dims = sum(actor_dims) + sum(n_actions)
 
     maddpg_agents = MADDPG(
@@ -29,24 +43,23 @@ def run():
         n_agents=n_agents,
         n_actions=n_actions,
         env=parallel_env,
-        gamma=0.95,
-        alpha=1e-4,
-        beta=1e-3,
+        gamma=GAMMA,
+        alpha=ALPHA,
+        beta=BETA,
+        tau=TAU,
+        checkpoint_dir="data/models",
+        scenario=scenario,
     )
     critic_dims = sum(actor_dims)
 
-    # re calcualte critic_dims because we are not concatenating states with actions anymore, like in td3_style ddpg,
     memory = MultiAgentReplayBuffer(
-        max_size=1_000_000,
+        max_size=MEMORY_SIZE,
         critic_dims=critic_dims,
         actor_dims=actor_dims,
         n_actions=n_actions,
         n_agents=n_agents,
-        batch_size=1024,
+        batch_size=BATCH_SIZE,
     )
-
-    EVAL_INTERVAL = 1000
-    MAX_STEPS = 1_000_000
 
     total_steps = 0
     episode = 0
@@ -98,18 +111,20 @@ def run():
 
         episode += 1
 
-    np.save("maddpg_score.npy", np.array(eval_scores))
-    np.save("maddpg_steps.npy", np.array(eval_steps))
+    data_dir = Path("")
+    data_dir.mkdir(parents=True, exist_ok=True)
+    np.save("data/raw_data/maddpg_score.npy", np.array(eval_scores))
+    np.save("data/raw_data/maddpg_steps.npy", np.array(eval_steps))
 
 
-def evaluate(agents, env, ep, step, n_eval=3):
+def evaluate(agents: MADDPG, env, ep: int, step: int, n_eval: int = 3):
     score_history = []
-    for i in range(n_eval):
+    for _ in range(n_eval):
         obs, _ = env.reset()
         score = 0
         terminal = [False] * env.max_num_agents
         while not any(terminal):
-            actions = agents.choose_actions(obs, evaluate=True)
+            actions = agents.choose_actions(obs, eval=True)
             next_obs, rewards, done, truncated, info = env.step(actions)
 
             list_truncated = list(truncated.values())
