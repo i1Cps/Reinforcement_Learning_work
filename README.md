@@ -109,7 +109,7 @@ The easiest way to get started with the deep reinforcement learning algorithms i
 
 ```algorithms/<specific-algorithm>/data/plots```
 
-[For example](algorithms/ppo/data/plots/mappo_plot.png)
+[For example](algorithms/mappo/data/plots/mappo_plot.png)
 
 
 
@@ -131,7 +131,10 @@ Theo Moore-Calters
 
 [![GitHub Badge](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/i1Cps) [![LinkedIn Badge](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](www.linkedin.com/in/theo-moore-calters)
 
-Special Thanks to [![Phil](https://img.shields.io/badge/Phil%20-8A2BE2)](https://www.linkedin.com/in/phil-tabor-05775423/)
+**Special Thanks To:**
+
+
+[![Phil](https://img.shields.io/badge/Phil%20-8A2BE2)](https://www.linkedin.com/in/phil-tabor-05775423/)
 
 
 [![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/solar.png)](#license)
