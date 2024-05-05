@@ -22,7 +22,6 @@
 * [➤ :coffee: Buy me a coffee](#-coffee-buy-me-a-coffee)
 * [➤ :scroll: Credits](#-scroll-credits)
 * [➤ License](#-license)
-* [➤ License](#-license-1)
 
 
 [![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/solar.png)](#pencil-about-the-project)
@@ -38,22 +37,22 @@ This repository is my personal collection and demonstration of various deep rein
 ## ➤ :floppy_disk: Key Project File Description
 
 ### DQN (Deep Q-Networks)
-* The [`DQN folder`](code/dqn/) file implements the DQN algorithm. DQN extends Q-learning by using deep neural networks to approximate the Q-value function. The code includes network architecture, experience replay, and the epsilon-greedy strategy for action selection. It is primarily based on the paper by Mnih et al. (2015), which you can read more about [here](https://www.nature.com/articles/nature14236).
+* The [`DQN`](algorithms/dqn) directory implements the DQN algorithm. DQN extends Q-learning by using deep neural networks to approximate the Q-value function. The code includes network architecture, experience replay, and the epsilon-greedy strategy for action selection. It is primarily based on the paper by Mnih et al. (2015), which you can read more about [here](https://www.nature.com/articles/nature14236).
 
 ### DDPG (Deep Deterministic Policy Gradient)
-* The [`DDPG folder`](code/ddpg/) file contains the implementation of DDPG, a policy gradient algorithm that uses a deterministic policy and operates over continuous action spaces. The script manages network updates, policy learning, and the Ornstein-Uhlenbeck process for action exploration. The foundational paper by Lillicrap et al. (2016) is accessible [here](https://arxiv.org/abs/1509.02971).
+* The [`DDPG`](algorithms/ddpg) folder contains the implementation of DDPG, a policy gradient algorithm that uses a deterministic policy and operates over continuous action spaces. The script manages network updates, policy learning, and the Ornstein-Uhlenbeck process for action exploration. The foundational paper by Lillicrap et al. (2016) is accessible [here](https://arxiv.org/abs/1509.02971).
 
 ### TD3 (Twin Delayed DDPG)
-* The [`TD3 folder`](code/td3) file is used for the TD3 algorithm, an extension of DDPG that reduces function approximation error by using twin Q-networks and delayed policy updates. This approach is elaborated in the paper by Fujimoto et al. (2018), which can be found [here](https://arxiv.org/abs/1802.09477).
+* The [`TD3`](algorithms/td3) file is used for the TD3 algorithm, an extension of DDPG that reduces function approximation error by using twin Q-networks and delayed policy updates. This approach is elaborated in the paper by Fujimoto et al. (2018), which can be found [here](https://arxiv.org/abs/1802.09477).
 
 ### PPO (Proximal Policy Optimization)
-* The [`PPO fodler`](code/ppo) file facilitates the implementation of PPO, which optimizes policy learning by maintaining a balance between exploration and exploitation using a clipped surrogate objective. The algorithm is detailed in the paper by Schulman et al. (2017), available [here](https://arxiv.org/abs/1707.06347).
+* The [`PPO`](algorithms/ppo) fodler facilitates the implementation of PPO, which optimizes policy learning by maintaining a balance between exploration and exploitation using a clipped surrogate objective. The algorithm is detailed in the paper by Schulman et al. (2017), available [here](https://arxiv.org/abs/1707.06347).
 
 ### MADDPG (Multi-Agent DDPG)
-* The [`MADDPG`](code/maddpg) file explores the MADDPG framework, designed for multi-agent environments. It extends DDPG by considering the actions of other agents in the environment, enhancing training stability and performance in cooperative or competitive scenarios. The key concepts are discussed in the paper by Lowe et al. (2017), accessible [here](https://arxiv.org/abs/1706.02275).
+* The [`MADDPG`](algorithms/maddpg) folder explores the MADDPG framework, designed for multi-agent environments. It extends DDPG by considering the actions of other agents in the environment, enhancing training stability and performance in cooperative or competitive scenarios. The key concepts are discussed in the paper by Lowe et al. (2017), accessible [here](https://arxiv.org/abs/1706.02275).
 
 ### MAPPO (Multi-Agent PPO)
-* The [`MAPPO`](code/mappo) file implements MAPPO, adapting the robust single-agent PPO algorithm for multi-agent settings. This file includes adaptations for centralized training with decentralized execution, suitable for complex multi-agent scenarios. The approach is based on findings discussed in various research studies on multi-agent reinforcement learning.
+* The [`MAPPO`](algorithms/mappo) folder implements MAPPO, adapting the robust single-agent PPO algorithm for multi-agent settings. This file includes adaptations for centralized training with decentralized execution, suitable for complex multi-agent scenarios. The approach is based on findings discussed in various research studies on multi-agent reinforcement learning.
 
 ### A3C (Asynchronous Advantage Actor-Critic)
 * COMING SOON
@@ -80,15 +79,14 @@ The easiest way to get started with the deep reinforcement learning algorithms i
 **Clone the repository:**
 
 ```
-   git clone https://github.com/i1Cps/Reinforcement_Learning_work.git
-   cd Reinforcement_Learning_work
-
+   git clone https://github.com/i1Cps/reinforcement-learning-work.git
+   cd reinforcement_learning_work
 ```
 
 **Create a virtual environment (optional but recommended):**
 ```
     python3 -m venv env
-    source env/bin/activate  # On Windows use `env\Scripts\activate`
+    source env/bin/activate  # On Windows use `env\Scripts\activate` I think lol
 ```
 
 **Install the required dependencies:**
@@ -98,7 +96,7 @@ The easiest way to get started with the deep reinforcement learning algorithms i
 
 **Run a specific algorithm (example with PPo):**
 ```
-    cd ppo
+    cd algorithms/ppo
     python3 main.py
 ```
 
@@ -108,7 +106,12 @@ The easiest way to get started with the deep reinforcement learning algorithms i
     python3 plot.py
 ```
 
-**View graphs in ```<algorithm>/data/plots```
+**View graphs plots in:**
+
+```algorithms/<specific-algorithm>/data/plots```
+
+[For example](algorithms/ppo/data/plots/mappo_plot.png)
+
 
 
 
@@ -139,9 +142,3 @@ Licensed under [MIT](https://opensource.org/licenses/MIT).
 
 
 
-
-[![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/solar.png)](#license)
-
-## ➤ License
-	
-Licensed under [MIT](https://opensource.org/licenses/MIT).
