@@ -21,7 +21,6 @@ class MAPPO:
         scenario: str = "unclassified",
     ):
         self.agents = []
-        checkpoint_dir += scenario
         for agent_idx, agent in enumerate(env.agents):
             self.agents.append(
                 Agent(

@@ -113,7 +113,7 @@ def run():
 
     data_dir = Path("")
     data_dir.mkdir(parents=True, exist_ok=True)
-    np.save("data/raw_data/maddpg_score.npy", np.array(eval_scores))
+    np.save("data/raw_data/maddpg_scores.npy", np.array(eval_scores))
     np.save("data/raw_data/maddpg_steps.npy", np.array(eval_steps))
 
 
