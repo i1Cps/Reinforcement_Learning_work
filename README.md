@@ -29,7 +29,7 @@
 ## ➤ :pencil: About The Project
 --------------------------
 
-This repository is my personal collection and demonstration of various deep reinforcement learning (DRL) algorithms, showcasing my grasp and application of advanced concepts in the field. Featured implementations include popular models such as DQN, A3C, DDPG, TD3, PPO, MADDPG, and MAPPO. Each model's directory provides richly commented code, designed to display not just the technical implementation but also my understanding of the strategic underpinnings of each algorithm. While smaller in scope compared to some of my other projects, this repository serves as an essential tool for both personal reference and as a portfolio piece that reflects my proficiency and ongoing engagement with the latest in DRL advancements.
+This repository is my personal collection and demonstration of various deep reinforcement learning (DRL) algorithms, showcasing my grasp and application of advanced concepts in the field. Each model's directory provides richly commented code, designed to display not just the technical implementation but also my understanding of the strategic underpinnings of each algorithm.
 
 
 [![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/solar.png)](#floppy_disk-key-project-file-description)
@@ -131,8 +131,7 @@ Theo Moore-Calters
 
 [![GitHub Badge](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/i1Cps) [![LinkedIn Badge](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](www.linkedin.com/in/theo-moore-calters)
 
-**Special Thanks To:**
-
+Special Thanks to:
 
 [![Phil](https://img.shields.io/badge/Phil%20-8A2BE2)](https://www.linkedin.com/in/phil-tabor-05775423/)
 
