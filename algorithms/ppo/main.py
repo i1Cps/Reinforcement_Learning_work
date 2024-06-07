@@ -61,6 +61,8 @@ if __name__ == "__main__":
         n_actions=env.action_space.shape[0],
     )
 
+    model_dir = Path("model_weights")
+    model_dir.mkdir(parents=True, exist_ok=True)
     file_path = (
         "bipedal_walker_"
         + str(learning_rate)
@@ -70,8 +72,7 @@ if __name__ == "__main__":
         + str(max_steps)
         + "_games"
     )
-    model_file_path = Path("model_weights") / file_path
-    model_file_path.mkdir(parents=True, exist_ok=True)
+    model_file_path = model_dir / file_path
 
     if load_model:
         agent.load(model_file_path)
@@ -80,7 +81,7 @@ if __name__ == "__main__":
     total_steps = 0
     trajectory_len = 0
     episode = 0
-    best_score = np.Inf
+    best_score = -np.Inf
 
     while total_steps < max_steps:
         observation, info = env.reset(seed=seed)
@@ -126,6 +127,7 @@ if __name__ == "__main__":
         )
         episode += 1
     x = [i + 1 for i in range(episode)]
-    figure_file_path = Path("plots") / (file_path + ".png")
-    figure_file_path.mkdir(parents=True, exist_ok=True)
-    plot_learning_curve(x, score_history, figure_file_path)
+    plot_dir = Path("plots")
+    plot_dir.mkdir(parents=True, exist_ok=True)
+    plot_file_path = plot_dir / (file_path + ".png")
+    plot_learning_curve(x, score_history, plot_file_path)

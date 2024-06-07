@@ -37,7 +37,7 @@ class Agent:
             entropy_coefficient  # Coefficient for entropy regularisation
         )
 
-        # Initialize the actor network
+        # Initialise the actor network
         self.actor = ActorNetwork(
             input_dims=actor_dims,
             learning_rate=alpha,
@@ -46,7 +46,7 @@ class Agent:
             fc2=actor_fc2,
         )
 
-        # Initialize the critic network
+        # Initialise the critic network
         self.critic = CriticNetwork(
             input_dims=critic_dims,
             learning_rate=beta,
