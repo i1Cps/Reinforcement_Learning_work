@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     T = 2048
     num_mini_batch = 32
-    n_epochs = 10
+    n_epochs = 15
     max_steps = 1_000_000
     max_action = env.action_space.high[0]
     learning_rate = 3e-4
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         entropy_coefficient=1e-3,
         gae_lambda=0.95,
         policy_clip=0.2,
-        n_epochs=10,
+        n_epochs=n_epochs,
         gamma=0.99,
         actor_fc1=128,
         actor_fc2=128,
@@ -61,21 +61,20 @@ if __name__ == "__main__":
         n_actions=env.action_space.shape[0],
     )
 
-    model_dir = Path("model_weights")
-    model_dir.mkdir(parents=True, exist_ok=True)
     file_path = (
         "bipedal_walker_"
         + str(learning_rate)
-        + "N_epochs_"
+        + "learning_rate_"
         + str(n_epochs)
-        + "_"
+        + "_epochs_"
         + str(max_steps)
-        + "_games"
+        + "_steps"
     )
-    model_file_path = model_dir / file_path
+    model_file_dir = Path("model_weights") / file_path
+    model_file_dir.mkdir(parents=True, exist_ok=True)
 
     if load_model:
-        agent.load(model_file_path)
+        agent.load(model_file_dir)
 
     score_history = []
     total_steps = 0
@@ -84,20 +83,24 @@ if __name__ == "__main__":
     best_score = -np.Inf
 
     while total_steps < max_steps:
+        # Reset environment and get initial state
         observation, info = env.reset(seed=seed)
         done = False
         score = 0
         while not done:
             action, prob = agent.choose_action(observation)
+            # Convert action to correct action space
             adapted_action = action_adapter(action, max_action)
             next_observation, reward, terminated, truncated, info = env.step(
                 adapted_action
             )
 
             done = terminated or truncated
+            # Clip reward for drastically better learning
             clipped_reward = clip_reward(reward)
             score += reward
 
+            # Build store memory
             memory.store_memory(
                 state=observation,
                 action=action,
@@ -110,6 +113,7 @@ if __name__ == "__main__":
             total_steps += 1
             trajectory_len += 1
 
+            # Once trajectory has completed start learning sequence
             if trajectory_len % T == 0:
                 agent.learn(memory)
                 trajectory_len = 0
@@ -119,7 +123,7 @@ if __name__ == "__main__":
         avg_score = np.mean(score_history[-100:])
         if avg_score > best_score:
             best_score = avg_score
-            agent.save(model_file_path)
+            agent.save(model_file_dir)
         print(
             "{} Episode {} total steps {}  avg_score {:.1f}".format(
                 env_id, episode, total_steps, avg_score
