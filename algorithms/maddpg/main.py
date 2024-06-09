@@ -3,6 +3,7 @@ import numpy as np
 from maddpg import MADDPG
 from memory import MultiAgentReplayBuffer
 from pettingzoo.mpe import simple_speaker_listener_v4
+from utils import plot_learning_curve
 
 
 def obs_list_to_state_vector(observation):
@@ -24,47 +25,80 @@ def run():
     TAU = 0.01
     EVAL_INTERVAL = 1000
     MAX_STEPS = 1_000_000
-
+    LOAD_MODEL = False
     scenario = "simple_speaker_listener"
+
+    # Initialise the environment wrapper with .reset() call
     _, _ = parallel_env.reset()
+
+    # Get number of agents configured for the environment
     n_agents = parallel_env.max_num_agents
 
-    actor_dims = [
+    # A list of input state spaces for each agent actor network
+    actor_state_dims = [
         parallel_env.observation_space(agent).shape[0] for agent in parallel_env.agents
     ]
+
+    # A list of each agents action space
     n_actions = [
         parallel_env.action_space(agent).shape[0] for agent in parallel_env.agents
     ]
-    critic_dims = sum(actor_dims) + sum(n_actions)
 
+    # MADDPG ~ The state space for the critic network is the sum of every actors state dimension (READ THE PAPER)
+    critic_state_dims = sum(actor_state_dims)
+
+    # MADDPG ~ The input dims for the critic network is the sum of actor states + sum of action spaces
+    critic_input_dims = critic_state_dims + sum(n_actions)
+
+    # Class to handle our agents
     maddpg_agents = MADDPG(
-        actor_dims=actor_dims,
-        critic_dims=critic_dims,
+        actor_input_dims=actor_state_dims,
+        critic_input_dims=critic_input_dims,
         n_agents=n_agents,
         n_actions=n_actions,
         env=parallel_env,
-        gamma=GAMMA,
         alpha=ALPHA,
         beta=BETA,
+        gamma=GAMMA,
         tau=TAU,
-        checkpoint_dir="data/models",
-        scenario=scenario,
+        actor_fc1=256,
+        actor_fc2=256,
+        critic_fc1=256,
+        critic_fc2=256,
     )
-    critic_dims = sum(actor_dims)
 
+    # Centralised memory buffer
     memory = MultiAgentReplayBuffer(
         max_size=MEMORY_SIZE,
-        critic_dims=critic_dims,
-        actor_dims=actor_dims,
+        critic_state_dims=critic_state_dims,
+        actor_state_dims=actor_state_dims,
         n_actions=n_actions,
         n_agents=n_agents,
         batch_size=BATCH_SIZE,
     )
 
+    file_path = (
+        scenario
+        + "_"
+        + str(ALPHA)
+        + "_learning_rate_"
+        + str(BATCH_SIZE)
+        + "_batch_size_"
+        + str(MAX_STEPS)
+        + "_total_steps"
+    )
+
+    model_file_dir = Path("model_weights") / file_path
+    model_file_dir.mkdir(parents=True, exist_ok=True)
+
+    if LOAD_MODEL:
+        maddpg_agents.load(model_file_dir)
+
     total_steps = 0
     episode = 0
     eval_scores = []
     eval_steps = []
+    best_score = -np.inf
 
     score = evaluate(maddpg_agents, parallel_env, episode, total_steps)
     eval_scores.append(score)
@@ -109,12 +143,16 @@ def run():
             eval_scores.append(score)
             eval_steps.append(total_steps)
 
+            if score > best_score:
+                best_score = score
+                maddpg_agents.save(model_file_dir)
+
         episode += 1
 
-    data_dir = Path("")
-    data_dir.mkdir(parents=True, exist_ok=True)
-    np.save("data/raw_data/maddpg_scores.npy", np.array(eval_scores))
-    np.save("data/raw_data/maddpg_steps.npy", np.array(eval_steps))
+    plot_dir = Path("plots")
+    plot_dir.mkdir(parents=True, exist_ok=True)
+    plot_file_path = plot_dir / (file_path + ".png")
+    plot_learning_curve(eval_steps, eval_scores, plot_file_path)
 
 
 def evaluate(agents: MADDPG, env, ep: int, step: int, n_eval: int = 3):

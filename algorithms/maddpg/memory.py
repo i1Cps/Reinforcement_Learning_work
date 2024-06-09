@@ -6,8 +6,8 @@ class MultiAgentReplayBuffer:
     def __init__(
         self,
         max_size: int,
-        critic_dims: int,
-        actor_dims: List[int],
+        critic_state_dims: int,
+        actor_state_dims: List[int],
         n_actions: List[int],
         n_agents: int,
         batch_size: int,
@@ -15,12 +15,12 @@ class MultiAgentReplayBuffer:
         self.mem_size = max_size
         self.mem_counter = 0
         self.n_agents = n_agents
-        self.actor_dims = actor_dims
+        self.actor_state_dims = actor_state_dims
         self.batch_size = batch_size
         self.n_actions = n_actions
 
-        self.state_memory = np.zeros((self.mem_size, critic_dims))
-        self.next_state_memory = np.zeros((self.mem_size, critic_dims))
+        self.state_memory = np.zeros((self.mem_size, critic_state_dims))
+        self.next_state_memory = np.zeros((self.mem_size, critic_state_dims))
         self.reward_memory = np.zeros((self.mem_size, n_agents))
         self.terminal_memory = np.zeros((self.mem_size, n_agents), dtype=bool)
 
@@ -33,10 +33,10 @@ class MultiAgentReplayBuffer:
 
         for i in range(self.n_agents):
             self.actor_state_memory.append(
-                np.zeros((self.mem_size, self.actor_dims[i]))
+                np.zeros((self.mem_size, self.actor_state_dims[i]))
             )
             self.actor_next_state_memory.append(
-                np.zeros((self.mem_size, self.actor_dims[i]))
+                np.zeros((self.mem_size, self.actor_state_dims[i]))
             )
             self.actor_action_memory.append(
                 np.zeros((self.mem_size, self.n_actions[i]))
