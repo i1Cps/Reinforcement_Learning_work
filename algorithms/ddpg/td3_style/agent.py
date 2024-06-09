@@ -131,28 +131,12 @@ class Agent:
     def update_network_parameters(self, tau=None):
         if tau is None:
             tau = self.tau
+        for target_param, param in zip(
+            self.target_critic.parameters(), self.critic.parameters()
+        ):
+            target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
 
-        actor_params = self.actor.named_parameters()
-        critic_params = self.critic.named_parameters()
-        target_actor_params = self.target_actor.named_parameters()
-        target_critic_params = self.target_critic.named_parameters()
-
-        critic_state_dict = dict(critic_params)
-        actor_state_dict = dict(actor_params)
-        target_critic_state_dict = dict(target_critic_params)
-        target_actor_state_dict = dict(target_actor_params)
-
-        for name in critic_state_dict:
-            critic_state_dict[name] = (
-                tau * critic_state_dict[name].clone()
-                + (1 - tau) * target_critic_state_dict[name].clone()
-            )
-
-        for name in actor_state_dict:
-            actor_state_dict[name] = (
-                tau * actor_state_dict[name].clone()
-                + (1 - tau) * target_actor_state_dict[name].clone()
-            )
-
-        self.target_critic.load_state_dict(critic_state_dict)
-        self.target_actor.load_state_dict(actor_state_dict)
+        for target_param, param in zip(
+            self.target_actor.parameters(), self.actor.parameters()
+        ):
+            target_param.data.copy_(tau * param.data + (1 - tau) * target_param.data)
