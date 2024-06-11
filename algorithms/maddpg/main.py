@@ -123,13 +123,13 @@ def run():
 
             terminal = [d or t for d, t in zip(list_done, list_truncated)]
             memory.store_transition(
-                raw_obs=list_obs,
-                state=state,
-                action=list_actions,
-                reward=list_reward,
-                next_raw_obs=list_next_obs,
-                next_state=next_state,
-                done=terminal,
+                single_obs=list_obs,
+                global_obs=state,
+                actions=list_actions,
+                rewards=list_reward,
+                next_single_obs=list_next_obs,
+                next_global_obs=next_state,
+                dones=terminal,
             )
 
             if total_steps % 100 == 0:

@@ -44,24 +44,24 @@ class MultiAgentReplayBuffer:
 
     def store_transition(
         self,
-        raw_obs: List[np.ndarray],
-        state: np.ndarray,
-        action: List[np.ndarray],
-        reward: List,
-        next_raw_obs: List[np.ndarray],
-        next_state: np.ndarray,
-        done: List[bool],
+        single_obs: List[np.ndarray],
+        global_obs: np.ndarray,
+        actions: List[np.ndarray],
+        rewards: List,
+        next_single_obs: List[np.ndarray],
+        next_global_obs: np.ndarray,
+        dones: List[bool],
     ):
         index = self.mem_counter % self.mem_size
         for agent_idx in range(self.n_agents):
-            self.actor_state_memory[agent_idx][index] = raw_obs[agent_idx]
-            self.actor_next_state_memory[agent_idx][index] = next_raw_obs[agent_idx]
-            self.actor_action_memory[agent_idx][index] = action[agent_idx]
+            self.actor_state_memory[agent_idx][index] = single_obs[agent_idx]
+            self.actor_next_state_memory[agent_idx][index] = next_single_obs[agent_idx]
+            self.actor_action_memory[agent_idx][index] = actions[agent_idx]
 
-        self.state_memory[index] = state
-        self.next_state_memory[index] = next_state
-        self.reward_memory[index] = reward
-        self.terminal_memory[index] = done
+        self.state_memory[index] = global_obs
+        self.next_state_memory[index] = next_global_obs
+        self.reward_memory[index] = rewards
+        self.terminal_memory[index] = dones
         self.mem_counter += 1
 
     def sample_buffer(
